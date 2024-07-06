@@ -1,6 +1,27 @@
-import { Fq, Fq12, Fq2, Fq6, R } from './ff'
+import { Field, Fq, Fq12, Fq2, Fq6, R } from './ff'
 
-export class PointG1 {
+export interface Point<F extends Field> {
+    x: F
+    y: F
+    equals(rhs: Point<F>): boolean
+    isOnCurve(): boolean
+    isInSubgroup(): boolean
+    add(rhs: Point<F>): Point<F>
+    double(): Point<F>
+    neg(): Point<F>
+    mul(c: bigint): Point<F>
+    clone(): Point<F>
+}
+
+export interface PointClassType<F extends Field> {
+    new (x: F, y: F): Point<F>
+    generator(): Point<F>
+    infinity(): Point<F>
+}
+
+export type PointInstanceType<F extends Field> = InstanceType<PointClassType<F>>
+
+export class PointG1 implements PointInstanceType<Fq> {
     x: Fq
     y: Fq
 
@@ -116,7 +137,7 @@ export class PointG1 {
     }
 }
 
-export class PointG2 {
+export class PointG2 implements PointInstanceType<Fq2> {
     x: Fq2
     y: Fq2
 
@@ -213,7 +234,7 @@ export class PointG2 {
         return acc
     }
 
-    /// Untwist an affine point in G2 -> G12
+    /// Untwist an affine point in G2 defined over Fq2 to a point defined over Fq12
     untwist(): PointGT {
         const x1 = this.x
         const y1 = this.y
@@ -254,13 +275,57 @@ export class PointG2 {
 }
 
 /// Point in G12
-export class PointGT {
+export class PointGT implements PointInstanceType<Fq12> {
     x: Fq12
     y: Fq12
 
     constructor(x: Fq12, y: Fq12) {
         this.x = x
         this.y = y
+    }
+
+    static generator(): PointGT {
+        throw new Error('Not implemented')
+    }
+
+    static infinity(): PointGT {
+        return new PointGT(Fq12.zero(), Fq12.zero())
+    }
+
+    equals(rhs: PointGT): boolean {
+        return this.x.equals(rhs.x) && this.y.equals(rhs.y)
+    }
+
+    isOnCurve(): boolean {
+        // Base case: point at infinity
+        if (this.equals(PointGT.infinity())) {
+            return false
+        }
+
+        // y^2 = x^3 + 4
+        const lhs = this.y.mul(this.y)
+        const rhs = this.x.mul(this.x).mul(this.x).add(Fq12.fromNumber(4n))
+        return lhs.equals(rhs)
+    }
+
+    isInSubgroup(): boolean {
+        throw new Error('Not implemented')
+    }
+
+    add(rhs: PointGT): PointGT {
+        throw new Error('Not implemented')
+    }
+
+    double(): PointGT {
+        throw new Error('Not implemented')
+    }
+
+    neg(): PointGT {
+        throw new Error('Not implemented')
+    }
+
+    mul(c: bigint): PointGT {
+        throw new Error('Not implemented')
     }
 
     clone(): PointGT {
