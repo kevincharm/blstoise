@@ -20,5 +20,8 @@
     "prettier": "^3.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.4.0"
   }
 }

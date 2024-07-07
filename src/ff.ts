@@ -4,8 +4,8 @@ export const P =
 // BLS12-381 curve order
 export const R = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001n
 
-// n mod n
-function mod(n: bigint, m: bigint): bigint {
+// n mod m
+export function mod(n: bigint, m: bigint): bigint {
     return ((n % m) + m) % m
 }
 
