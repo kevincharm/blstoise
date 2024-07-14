@@ -55,7 +55,7 @@ describe('BLS', () => {
         expect(rawVerifyG1(pubKey, sig, hm)).to.eq(true)
     })
 
-    it('[regression] drand beacon', async () => {
+    it('[regression] drand beacon: G1 deserialisation', async () => {
         // const latestBeaconUrl =
         //     'https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/9382828'
         // const beacon: {
@@ -80,5 +80,5 @@ describe('BLS', () => {
         ) // pad to 64 bits == 8 bytes
         const hm = hashToPoint(dst, messageBytes)
         expect(rawVerifyG1(pubKey, sig, hm)).to.eq(true)
-    }).timeout(30000)
+    })
 })

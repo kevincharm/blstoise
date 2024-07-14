@@ -96,6 +96,10 @@ export class Fq implements Field {
         return this.x === rhs.x
     }
 
+    lt(rhs: Fq): boolean {
+        return this.x < rhs.x
+    }
+
     add(rhs: Fq): Fq {
         return new Fq(this.x + rhs.x)
     }
@@ -158,6 +162,11 @@ export class Fq implements Field {
             throw new Error(`No square root exists for ${this}`)
         }
         return root
+    }
+
+    signBigEndian(): boolean {
+        const negV = this.neg()
+        return this.lt(negV)
     }
 
     toString() {

@@ -50,7 +50,7 @@ export class PointG1 implements PointInstanceType<Fq> {
                 // is not point at infinity; recover y from curve equation
                 // y^2 = x^3 + 4 -> y = sqrt(x^3 + 4)
                 let y = x.mul(x).mul(x).add(new Fq(4n)).sqrt()
-                if (yIsLexLargest && y.x < y.neg().x) {
+                if (yIsLexLargest === y.signBigEndian()) {
                     y = y.neg()
                 }
                 return new PointG1(x, y)
