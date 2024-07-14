@@ -7,7 +7,12 @@ export function pair(p: PointG1, q: PointG2): Fq12 {
     if (p.equals(PointG1.infinity()) || q.equals(PointG2.infinity())) {
         return Fq12.one()
     }
-    // TODO: Check validity of points
+    if (!p.isInSubgroup() || !p.isOnCurve()) {
+        throw new Error(`Invalid point: ${p}`)
+    }
+    if (!q.isInSubgroup() || !q.isOnCurve()) {
+        throw new Error(`Invalid point: ${q}`)
+    }
     const r = miller(p, q)
     return finalExp(r, (P ** 12n - 1n) / R)
 }
@@ -21,9 +26,12 @@ export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
     for (let i = 0; i < ps.length; i++) {
         const p = ps[i]
         const q = qs[i]
-        const r = pair(p, q)
+        if (!p.isOnCurve() || !p.isInSubgroup()) throw new Error(`Invalid point: ${p}`)
+        if (!q.isOnCurve() || !q.isInSubgroup()) throw new Error(`Invalid point: ${q}`)
+        const r = miller(p, q)
         result = result.mul(r)
     }
+    result = finalExp(result, (P ** 12n - 1n) / R)
     return result.equals(Fq12.one())
 }
 
