@@ -13,11 +13,10 @@ describe('subgroup points', () => {
             expect(pg.add(p)).to.eq(pg) // G + O = G
         })
 
-        it.skip('add', () => {
+        it('add', () => {
             const p = PointG1.generator()
-            const p2 = p.add(p)
-            const p3 = p2.add(p)
-            // TODO: Test against ref
+            const p2 = p.add(p).add(p)
+            expect(p2.equals(p.mul(3n))).to.eq(true)
         })
 
         it('mul', () => {

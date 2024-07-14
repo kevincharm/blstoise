@@ -7,7 +7,7 @@
   },
   "packageManager": "yarn@1.22.22",
   "scripts": {
-    "test": "yarn mocha -r ts-node/register test/**/*.spec.ts"
+    "test": "NODE_OPTIONS=--experimental-global-webcrypto yarn mocha -r ts-node/register test/**/*.spec.ts"
   },
   "author": "Kevin Charm <kevin@kevincharm.com>",
   "license": "MIT",

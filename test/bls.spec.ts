@@ -1,5 +1,7 @@
 import { expect } from 'chai'
-import { expandMsgXmd, hashToField } from '../src/bls'
+import { expandMsgXmd, hashToField, hashToPoint, rawVerifyG1 } from '../src/bls'
+import { sha256 } from '@noble/hashes/sha256'
+import { PointG1, PointG2 } from '../src/point'
 
 describe('BLS', () => {
     const dst = new Uint8Array(Buffer.from('BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_', 'ascii'))
@@ -23,15 +25,60 @@ describe('BLS', () => {
         ])
     })
 
-    // it('verify drand beacon', () => {
-    //     const publicKeyBytes = Buffer.from(
-    //         '83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a',
-    //         'hex',
-    //     )
-    //     const signatureBytes = Buffer.from(
-    //         '9819b31d0aedebe12a414ab4405dfce28d10fb33d74dfd8b921dd09a9915626faa7c35551584a7255dd1658062931104',
-    //         'hex',
-    //     )
-    //     const messageBytes = BigInt(9162609n).toString(16).padStart(16, '0') // pad to 64 bits == 8 bytes
-    // })
+    it('hashToPoint', () => {
+        const p = hashToPoint(dst, messageBytes)
+        expect(p.x.x).to.eq(
+            1198910066326735622577680242831393390970801051978648777282080468606313680859600948581997698323043835646099437524846n,
+        )
+        expect(p.y.x).to.eq(
+            2057868841575584746120388979277317449872305248232397789541047611599466400564636994006407901750858857388914134998050n,
+        )
+    })
+
+    it('verify drand beacon', () => {
+        const pubKey = PointG2.fromBytes(
+            Buffer.from(
+                '83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a',
+                'hex',
+            ),
+        )
+        const sig = PointG1.fromBytes(
+            Buffer.from(
+                '9819b31d0aedebe12a414ab4405dfce28d10fb33d74dfd8b921dd09a9915626faa7c35551584a7255dd1658062931104',
+                'hex',
+            ),
+        )
+        const messageBytes = sha256(
+            Buffer.from(BigInt(9162609n).toString(16).padStart(16, '0'), 'hex'),
+        ) // pad to 64 bits == 8 bytes
+        const hm = hashToPoint(dst, messageBytes)
+        expect(rawVerifyG1(pubKey, sig, hm)).to.eq(true)
+    })
+
+    it('[regression] drand beacon', async () => {
+        // const latestBeaconUrl =
+        //     'https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/public/9382828'
+        // const beacon: {
+        //     round: number
+        //     randomness: string
+        //     signature: string
+        // } = await fetch(latestBeaconUrl).then((res) => res.json())
+        const beacon = {
+            round: 9382828,
+            signature:
+                '85bb7199b79916131184d5d1456056c36c0ae28780239aff370fbef9d8281a53b12e4c27f266ee9f87389a0f0d409d3b',
+        }
+        const pubKey = PointG2.fromBytes(
+            Buffer.from(
+                '83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a',
+                'hex',
+            ),
+        )
+        const sig = PointG1.fromBytes(Buffer.from(beacon.signature, 'hex'))
+        const messageBytes = sha256(
+            Buffer.from(BigInt(beacon.round).toString(16).padStart(16, '0'), 'hex'),
+        ) // pad to 64 bits == 8 bytes
+        const hm = hashToPoint(dst, messageBytes)
+        expect(rawVerifyG1(pubKey, sig, hm)).to.eq(true)
+    }).timeout(30000)
 })

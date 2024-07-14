@@ -3,10 +3,34 @@ export const P =
     0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaabn
 // BLS12-381 curve order
 export const R = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001n
+// BLS12-381 x parameter used for the construction of the curve
+export const X = 0xd201000000010000n
 
 // n mod m
 export function mod(n: bigint, m: bigint): bigint {
     return ((n % m) + m) % m
+}
+
+export function modp(n: bigint): bigint {
+    return mod(n, P)
+}
+
+// x * y (mod p)
+export function mulmodp(x: bigint, y: bigint): bigint {
+    return mod(x * y, P)
+}
+
+export function modexp(x: bigint, y: bigint, p: bigint): bigint {
+    let result = 1n
+    while (y > 0) {
+        const lsb = y & 1n
+        y = y / 2n
+        if (lsb) {
+            result = mod(result * x, p)
+        }
+        x = mod(x * x, p)
+    }
+    return result
 }
 
 // Euclidean GCD extended binary algorithm
@@ -103,6 +127,39 @@ export class Fq implements Field {
         return new Fq(gcd(this.x, P, 1n, 0n, P))
     }
 
+    exp(y: bigint): Fq {
+        let x: Fq = this
+        let result = new Fq(1n)
+        while (y > 0) {
+            const lsb = y & 1n
+            y = y / 2n
+            if (lsb) {
+                result = result.mul(x)
+            }
+            x = x.mul(x)
+        }
+        return result
+    }
+
+    legendre(): number {
+        const x = this.exp((P - 1n) / 2n)
+        if (x.equals(new Fq(P - 1n))) {
+            return -1
+        }
+        if (!x.equals(Fq.zero()) && !x.equals(new Fq(1n))) {
+            throw new Error(`Legendre failed: ${this}^{(${P}-1)//2} = ${x}`)
+        }
+        return Number(x)
+    }
+
+    sqrt(): Fq {
+        const root = this.exp((P + 1n) / 4n)
+        if (!root.mul(root).equals(this)) {
+            throw new Error(`No square root exists for ${this}`)
+        }
+        return root
+    }
+
     toString() {
         return `(Fq ${this.x.toString()})`
     }
@@ -116,8 +173,18 @@ export class Fq implements Field {
 
 /// Quadratic extension to Fq
 export class Fq2 implements Field {
+    // This is taken from consensus specs
+    static readonly ORDER = P ** 2n
+    static readonly EIGHTH_ROOTS_OF_UNITY = Array.from({ length: 8 }, (_, k) =>
+        Fq2.fromTuple([1n, 1n]).exp((Fq2.ORDER * BigInt(k)) / 8n),
+    )
+    static readonly EVEN_EIGHT_ROOTS_OF_UNITY = Fq2.EIGHTH_ROOTS_OF_UNITY.filter(
+        (_, i) => i % 2 === 0,
+    )
+
     x: Fq
     y: Fq
+
     constructor(x: Fq, y: Fq) {
         this.x = x
         this.y = y
@@ -141,6 +208,14 @@ export class Fq2 implements Field {
 
     equals(rhs: Fq2): boolean {
         return this.x.equals(rhs.x) && this.y.equals(rhs.y)
+    }
+
+    gt(rhs: Fq2): boolean {
+        return this.x.x > rhs.x.x && this.y.x > rhs.y.x
+    }
+
+    lt(rhs: Fq2): boolean {
+        return this.x.x < rhs.x.x && this.y.x < rhs.y.x
     }
 
     add(rhs: Fq2): Fq2 {
@@ -184,6 +259,44 @@ export class Fq2 implements Field {
         const x1 = x0.mul(factor)
         const y1 = y0.neg().mul(factor)
         return new Fq2(x1, y1)
+    }
+
+    exp(y: bigint): Fq2 {
+        let x: Fq2 = this
+        let result = Fq2.one()
+        while (y > 0) {
+            const lsb = y & 1n
+            y = y / 2n
+            if (lsb) {
+                result = result.mul(x)
+            }
+            x = x.mul(x)
+        }
+        return result
+    }
+
+    // https://github.com/ethereum/trinity/blob/a1b0f058e7bc8e385c8dac3164c49098967fd5bb/eth2/_utils/bls.py#L63-L77
+    sqrt(): Fq2 {
+        const value = this
+        const candidateSquareroot = value.exp((Fq2.ORDER + 8n) / 16n)
+        const invValue = value.inv()
+        const check = candidateSquareroot.mul(candidateSquareroot).mul(invValue)
+        const rootIdx = Fq2.EVEN_EIGHT_ROOTS_OF_UNITY.findIndex((root) => root.equals(check))
+        if (rootIdx === -1) throw new Error(`No square root exists for ${value}`)
+        const root = Fq2.EIGHTH_ROOTS_OF_UNITY[rootIdx]
+        const x1 = candidateSquareroot.mul(root.inv())
+        const x2 = x1.neg()
+        // (x1.coeffs[1], x1.coeffs[0]) > (x2.coeffs[1], x2.coeffs[0])
+        if (x1.gt(x2)) {
+            return x1
+        } else {
+            return x2
+        }
+    }
+
+    signBigEndian(): boolean {
+        const negV = this.neg()
+        return this.lt(negV)
     }
 
     toString() {

@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import { Fq, Fq12, Fq2, Fq6, P } from './ff'
 
 export function randomFq12(): Fq12 {
@@ -26,5 +25,25 @@ export function randomBigIntModP(bytes: number, p: bigint): bigint {
 }
 
 export function randomBigInt(bytes: number): bigint {
-    return BigInt(`0x${randomBytes(bytes).toString('hex')}`)
+    return toBigInt(crypto.getRandomValues(new Uint8Array(bytes)))
+}
+
+export function toBigInt(bytes: Uint8Array): bigint {
+    return BigInt(`0x${toHex(bytes)}`)
+}
+
+export function toBigEndianBuffer(big: bigint, byteLength: number): Uint8Array {
+    const buf = new Uint8Array(byteLength)
+    let i = byteLength
+    while (big > 0n) {
+        buf[--i] = Number(big & 0xffn)
+        big >>= 8n
+    }
+    return buf
+}
+
+export function toHex(bytes: Uint8Array) {
+    return Array.from(bytes)
+        .map((x) => x.toString(16).padStart(2, '0'))
+        .join('')
 }

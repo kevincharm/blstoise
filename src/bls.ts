@@ -2,7 +2,9 @@
 import { sha256 } from '@noble/hashes/sha256'
 import { validatePairing } from './pairing'
 import { PointG1, PointG2 } from './point'
-import { mod, P } from './ff'
+import { Fq, modp } from './ff'
+import { toBigEndianBuffer, toBigInt } from './utils'
+import { mapToPointSSWU } from './sswu'
 
 /// Verify signatures on G1 from an already-hashed message
 export function rawVerifyG1(
@@ -15,12 +17,22 @@ export function rawVerifyG1(
     return validatePairing(ps, qs)
 }
 
+export function hashToPoint(dst: Uint8Array, msg: Uint8Array): PointG1 {
+    const [x, y] = hashToField(dst, msg, 2)
+    const [p0, p1] = mapToPointSSWU(x)
+    const p = new PointG1(new Fq(p0), new Fq(p1))
+    const [q0, q1] = mapToPointSSWU(y)
+    const q = new PointG1(new Fq(q0), new Fq(q1))
+    const r = p.add(q).clearCofactor()
+    return r
+}
+
 export function hashToField(dst: Uint8Array, msg: Uint8Array, count: number): bigint[] {
     const L = 64
     const _msg = expandMsgXmd(dst, msg, L * count)
     const els: bigint[] = []
     for (let i = 0; i < count; i++) {
-        const el = mod(toBigInt(_msg.slice(i * L, i * L + L)), P)
+        const el = modp(toBigInt(_msg.slice(i * L, i * L + L)))
         els.push(el)
     }
     return els
@@ -46,22 +58,4 @@ export function expandMsgXmd(dst: Uint8Array, message: Uint8Array, byteLength: n
         bi = sha256(b_i)
     }
     return out
-}
-
-function toBigInt(bytes: Uint8Array): bigint {
-    return BigInt(
-        `0x${Array.from(bytes)
-            .map((x) => x.toString(16).padStart(2, '0'))
-            .join('')}`,
-    )
-}
-
-function toBigEndianBuffer(big: bigint, byteLength: number): Uint8Array {
-    const buf = new Uint8Array(byteLength)
-    let i = byteLength
-    while (big > 0n) {
-        buf[--i] = Number(big & 0xffn)
-        big >>= 8n
-    }
-    return buf
 }

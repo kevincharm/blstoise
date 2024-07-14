@@ -1,4 +1,5 @@
-import { Field, Fq, Fq12, Fq2, Fq6, R } from './ff'
+import { Field, Fq, Fq12, Fq2, Fq6, R, X } from './ff'
+import { toBigInt } from './utils'
 
 export interface Point<F extends Field> {
     x: F
@@ -28,6 +29,40 @@ export class PointG1 implements PointInstanceType<Fq> {
     constructor(x: Fq, y: Fq) {
         this.x = x
         this.y = y
+    }
+
+    static fromBytes(bytes: Uint8Array): PointG1 {
+        const firstByte = bytes[0]
+        const isCompressed = ((firstByte >> 7) & 1) === 1
+        const isInfinity = ((firstByte >> 6) & 1) === 1
+        const yIsLexLargest = ((firstByte >> 5) & 1) === 1
+        // Clear 3 MSB
+        bytes[0] &= 0b00011111
+        if (isCompressed && bytes.byteLength === 48) {
+            // is compressed
+            const x = new Fq(toBigInt(bytes))
+            if (isInfinity) {
+                if (!x.equals(Fq.zero())) {
+                    throw new Error(`Invalid compressed point: expected zero, got ${x}`)
+                }
+                return PointG1.infinity()
+            } else {
+                // is not point at infinity; recover y from curve equation
+                // y^2 = x^3 + 4 -> y = sqrt(x^3 + 4)
+                let y = x.mul(x).mul(x).add(new Fq(4n)).sqrt()
+                if (yIsLexLargest && y.x < y.neg().x) {
+                    y = y.neg()
+                }
+                return new PointG1(x, y)
+            }
+        } else if (!isCompressed && bytes.byteLength === 96) {
+            // is uncompressed
+            const x = new Fq(toBigInt(bytes.slice(0, 48)))
+            const y = new Fq(toBigInt(bytes.slice(48, 96)))
+            return new PointG1(x, y)
+        } else {
+            throw new Error(`Invalid point encoding for G1 (${bytes.byteLength} bytes)`)
+        }
     }
 
     static generator(): PointG1 {
@@ -116,6 +151,10 @@ export class PointG1 implements PointInstanceType<Fq> {
         return acc
     }
 
+    clearCofactor(): PointG1 {
+        return this.mul(X).add(this)
+    }
+
     isOnCurve(): boolean {
         // Base case: point at infinity
         if (this.equals(PointG1.infinity())) {
@@ -144,6 +183,50 @@ export class PointG2 implements PointInstanceType<Fq2> {
     constructor(x: Fq2, y: Fq2) {
         this.x = x
         this.y = y
+    }
+
+    static fromBytes(bytes: Uint8Array): PointG2 {
+        const firstByte = bytes[0]
+        const isCompressed = ((firstByte >> 7) & 1) === 1
+        const isInfinity = ((firstByte >> 6) & 1) === 1
+        const yIsLexLargest = ((firstByte >> 5) & 1) === 1
+        // Clear 3 MSB
+        bytes[0] &= 0b00011111
+        if (isCompressed && bytes.byteLength === 96) {
+            // is compressed
+            const x = new Fq(toBigInt(bytes))
+            if (isInfinity) {
+                if (!x.equals(Fq.zero())) {
+                    throw new Error(`Invalid compressed point: expected zero, got ${x}`)
+                }
+                return PointG2.infinity()
+            } else {
+                const c1 = bytes.slice(0, 48)
+                const c0 = bytes.slice(48, 96)
+                const x = Fq2.fromTuple([toBigInt(c0), toBigInt(c1)])
+                // is not point at infinity; recover y from curve equation
+                // y^2 = x^3 + 4 -> y = sqrt(x^3 + 4)
+                let y = x
+                    .mul(x)
+                    .mul(x)
+                    .add(Fq2.fromTuple([4n, 4n]))
+                    .sqrt()
+                if (yIsLexLargest === y.signBigEndian()) {
+                    y = y.neg()
+                }
+                return new PointG2(x, y)
+            }
+        } else if (!isCompressed && bytes.byteLength === 192) {
+            // is uncompressed
+            const x = Fq2.fromTuple([toBigInt(bytes.slice(0, 48)), toBigInt(bytes.slice(48, 96))])
+            const y = Fq2.fromTuple([
+                toBigInt(bytes.slice(96, 144)),
+                toBigInt(bytes.slice(144, 192)),
+            ])
+            return new PointG2(x, y)
+        } else {
+            throw new Error(`Invalid point encoding for G1 (${bytes.byteLength} bytes)`)
+        }
     }
 
     static generator(): PointG2 {
