@@ -51,11 +51,13 @@ export function expandMsgXmd(dst: Uint8Array, message: Uint8Array, byteLength: n
     let b_i = new Uint8Array([...b0, 1, ...dst, domainLen])
     let bi = sha256(b_i)
     const out = new Uint8Array(byteLength)
-    for (let i = 1; i <= ell; i++) {
+    for (let i = 1; i < ell; i++) {
         const xored = toBigEndianBuffer(toBigInt(b0) ^ toBigInt(bi), 32)
         b_i = new Uint8Array([...xored, 1 + i, ...dst, domainLen])
         out.set(bi, (i - 1) * 32)
         bi = sha256(b_i)
     }
+    // final
+    out.set(bi, (ell - 1) * 32)
     return out
 }
