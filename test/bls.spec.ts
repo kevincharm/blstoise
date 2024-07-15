@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { expandMsgXmd, hashToField, hashToPoint, rawVerifyG1 } from '../src/bls'
-import { sha256 } from '@noble/hashes/sha256'
+import { sha256 } from '@kevincharm/sharmander256'
 import { PointG1, PointG2 } from '../src/point'
 
 describe('BLS', () => {

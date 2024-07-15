@@ -1,5 +1,5 @@
 /// BLS signature scheme
-import { sha256 } from '@noble/hashes/sha256'
+import { sha256 } from '@kevincharm/sharmander256'
 import { validatePairing } from './pairing'
 import { PointG1, PointG2 } from './point'
 import { Fq, modp } from './ff'

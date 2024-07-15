@@ -22,6 +22,6 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@noble/hashes": "^1.4.0"
+    "@kevincharm/sharmander256": "^1.0.0"
   }
 }
