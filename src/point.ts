@@ -152,6 +152,8 @@ export class PointG1 implements PointInstanceType<Fq> {
     }
 
     clearCofactor(): PointG1 {
+        // To map an element p in E(Fq) to G1, we can exponentiate p by 1-x
+        // https://eprint.iacr.org/2019/403.pdf Section 5 "Clearing cofactors"
         return this.mul(X).add(this)
     }
 
@@ -331,6 +333,13 @@ export class PointG2 implements PointInstanceType<Fq2> {
             Fq12.fromTuple([Fq6.zero(), root]).inv(),
         )
         return new PointGT(wideX, wideY)
+    }
+
+    clearCofactor(): PointG2 {
+        // G2 cofactor
+        const h2 =
+            0x5d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddfa628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5n
+        return this.mul(h2)
     }
 
     isOnCurve(): boolean {
