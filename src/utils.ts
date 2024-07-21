@@ -1,11 +1,11 @@
 import { Fq, Fq12, Fq2, Fq6, P } from './ff'
 
 export function randomFq12(): Fq12 {
-    return Fq12.fromTuple([randomFq6(), randomFq6()])
+    return new Fq12(randomFq6(), randomFq6())
 }
 
 export function randomFq6(): Fq6 {
-    return Fq6.fromTuple([randomFq2(), randomFq2(), randomFq2()])
+    return new Fq6(randomFq2(), randomFq2(), randomFq2())
 }
 
 export function randomFq2(): Fq2 {

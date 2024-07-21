@@ -323,14 +323,14 @@ export class PointG2 implements PointInstanceType<Fq2> {
     untwist(): PointGT {
         const x1 = this.x
         const y1 = this.y
-        const root = Fq6.fromTuple([Fq2.zero(), Fq2.one(), Fq2.zero()])
+        const root = new Fq6(Fq2.zero(), Fq2.one(), Fq2.zero())
         // wideX = [ Fq12 (Fq6 x1 0 0) 0 ] * inv (Fq12 root 0)
-        const wideX = Fq12.fromTuple([Fq6.fromTuple([x1, Fq2.zero(), Fq2.zero()]), Fq6.zero()]).mul(
-            Fq12.fromTuple([root, Fq6.zero()]).inv(),
+        const wideX = new Fq12(new Fq6(x1, Fq2.zero(), Fq2.zero()), Fq6.zero()).mul(
+            new Fq12(root, Fq6.zero()).inv(),
         )
         // wideY = [ Fq12 (Fq6 y1 0 0) 0 ] * inv (Fq12 0 root)
-        const wideY = Fq12.fromTuple([Fq6.fromTuple([y1, Fq2.zero(), Fq2.zero()]), Fq6.zero()]).mul(
-            Fq12.fromTuple([Fq6.zero(), root]).inv(),
+        const wideY = new Fq12(new Fq6(y1, Fq2.zero(), Fq2.zero()), Fq6.zero()).mul(
+            new Fq12(Fq6.zero(), root).inv(),
         )
         return new PointGT(wideX, wideY)
     }

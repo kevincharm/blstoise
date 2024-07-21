@@ -78,14 +78,10 @@ export interface Field {
 }
 
 export class Fq implements Field {
-    x: bigint
+    value: bigint
 
     constructor(x: bigint) {
-        this.x = mod(x, P)
-    }
-
-    static fromTuple([x]: bigint[]): Fq {
-        return new Fq(x)
+        this.value = mod(x, P)
     }
 
     static zero(): Fq {
@@ -93,31 +89,31 @@ export class Fq implements Field {
     }
 
     equals(rhs: Fq): boolean {
-        return this.x === rhs.x
+        return this.value === rhs.value
     }
 
     lt(rhs: Fq): boolean {
-        return this.x < rhs.x
+        return this.value < rhs.value
     }
 
     add(rhs: Fq): Fq {
-        return new Fq(this.x + rhs.x)
+        return new Fq(this.value + rhs.value)
     }
 
     sub(rhs: Fq): Fq {
-        return new Fq(this.x - rhs.x)
+        return new Fq(this.value - rhs.value)
     }
 
     neg(): Fq {
-        return new Fq(-this.x)
+        return new Fq(-this.value)
     }
 
     mul(rhs: Fq): Fq {
-        return new Fq(this.x * rhs.x)
+        return new Fq(this.value * rhs.value)
     }
 
     mulByScalar(c: bigint): Fq {
-        return new Fq(this.x * c)
+        return new Fq(this.value * c)
     }
 
     mulByNonResidue(): Fq {
@@ -125,10 +121,10 @@ export class Fq implements Field {
     }
 
     inv() {
-        if (this.x === 0n) {
+        if (this.value === 0n) {
             throw new Error(`Inversion of zero`)
         }
-        return new Fq(gcd(this.x, P, 1n, 0n, P))
+        return new Fq(gcd(this.value, P, 1n, 0n, P))
     }
 
     exp(y: bigint): Fq {
@@ -170,12 +166,12 @@ export class Fq implements Field {
     }
 
     toString() {
-        return `(Fq ${this.x.toString()})`
+        return `(Fq ${this.value.toString()})`
     }
 
     toJSON() {
         return {
-            x: this.x.toString(),
+            x: this.value.toString(),
         }
     }
 }
@@ -220,11 +216,11 @@ export class Fq2 implements Field {
     }
 
     gt(rhs: Fq2): boolean {
-        return this.x.x > rhs.x.x && this.y.x > rhs.y.x
+        return this.x.value > rhs.x.value && this.y.value > rhs.y.value
     }
 
     lt(rhs: Fq2): boolean {
-        return this.x.x < rhs.x.x && this.y.x < rhs.y.x
+        return this.x.value < rhs.x.value && this.y.value < rhs.y.value
     }
 
     add(rhs: Fq2): Fq2 {
@@ -320,9 +316,11 @@ export class Fq2 implements Field {
     }
 
     toTuple(): [bigint, bigint] {
-        return [this.x.x, this.y.x]
+        return [this.x.value, this.y.value]
     }
 }
+
+type Fq2Tuple = ReturnType<Fq2['toTuple']>
 
 /// Cubic extension to Fq2
 export class Fq6 implements Field {
@@ -335,20 +333,20 @@ export class Fq6 implements Field {
         this.z = z
     }
 
-    static fromTuple([x, y, z]: [Fq2, Fq2, Fq2]): Fq6 {
-        return new Fq6(x, y, z)
+    static fromTuple([x, y, z]: [Fq2Tuple, Fq2Tuple, Fq2Tuple]): Fq6 {
+        return new Fq6(Fq2.fromTuple(x), Fq2.fromTuple(y), Fq2.fromTuple(z))
     }
 
     static fromNumber(n: bigint): Fq6 {
-        return Fq6.fromTuple([Fq2.fromNumber(n), Fq2.zero(), Fq2.zero()])
+        return new Fq6(Fq2.fromNumber(n), Fq2.zero(), Fq2.zero())
     }
 
     static zero(): Fq6 {
-        return Fq6.fromTuple([Fq2.zero(), Fq2.zero(), Fq2.zero()])
+        return new Fq6(Fq2.zero(), Fq2.zero(), Fq2.zero())
     }
 
     static one(): Fq6 {
-        return Fq6.fromTuple([Fq2.one(), Fq2.zero(), Fq2.zero()])
+        return new Fq6(Fq2.one(), Fq2.zero(), Fq2.zero())
     }
 
     equals(rhs: Fq6): boolean {
@@ -397,7 +395,7 @@ export class Fq6 implements Field {
     }
 
     mulByNonResidue(): Fq6 {
-        return Fq6.fromTuple([this.z.mulByNonResidue(), this.x, this.y])
+        return new Fq6(this.z.mulByNonResidue(), this.x, this.y)
     }
 
     inv(): Fq6 {
@@ -412,7 +410,7 @@ export class Fq6 implements Field {
             .add(a2.mul(t1).mulByNonResidue())
             .add(a1.mul(t2).mulByNonResidue())
             .inv()
-        return Fq6.fromTuple([t0.mul(factor), t1.mul(factor), t2.mul(factor)])
+        return new Fq6(t0.mul(factor), t1.mul(factor), t2.mul(factor))
     }
 
     toString() {
@@ -436,6 +434,8 @@ export class Fq6 implements Field {
     }
 }
 
+type Fq6Tuple = ReturnType<Fq6['toTuple']>
+
 /// 12th degree extension to Fq
 export class Fq12 implements Field {
     x: Fq6
@@ -445,20 +445,20 @@ export class Fq12 implements Field {
         this.y = y
     }
 
-    static fromTuple([x, y]: [Fq6, Fq6]): Fq12 {
-        return new Fq12(x, y)
+    static fromTuple([x, y]: [Fq6Tuple, Fq6Tuple]): Fq12 {
+        return new Fq12(Fq6.fromTuple(x), Fq6.fromTuple(y))
     }
 
     static fromNumber(n: bigint): Fq12 {
-        return Fq12.fromTuple([Fq6.fromNumber(n), Fq6.zero()])
+        return new Fq12(Fq6.fromNumber(n), Fq6.zero())
     }
 
     static zero(): Fq12 {
-        return Fq12.fromTuple([Fq6.zero(), Fq6.zero()])
+        return new Fq12(Fq6.zero(), Fq6.zero())
     }
 
     static one(): Fq12 {
-        return Fq12.fromTuple([Fq6.one(), Fq6.zero()])
+        return new Fq12(Fq6.one(), Fq6.zero())
     }
 
     equals(rhs: Fq12): boolean {
@@ -517,7 +517,7 @@ export class Fq12 implements Field {
         }
     }
 
-    toTuple(): [ReturnType<Fq6['toTuple']>, ReturnType<Fq6['toTuple']>] {
+    toTuple(): [Fq6Tuple, Fq6Tuple] {
         return [this.x.toTuple(), this.y.toTuple()]
     }
 }

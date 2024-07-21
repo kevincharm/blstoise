@@ -103,7 +103,7 @@ describe('finite fields', () => {
             for (const [x, y, z] of testVectors) {
                 const a = new Fq(x)
                 const b = new Fq(y)
-                expect(a.add(b).x).to.equal(z)
+                expect(a.add(b).value).to.equal(z)
             }
         })
 
@@ -112,7 +112,7 @@ describe('finite fields', () => {
             for (const [x, y, z] of testVectors) {
                 const a = new Fq(x)
                 const b = new Fq(y)
-                expect(a.sub(b).x).to.equal(z)
+                expect(a.sub(b).value).to.equal(z)
             }
         })
 
@@ -121,7 +121,7 @@ describe('finite fields', () => {
             for (const [x, y, z] of testVectors) {
                 const a = new Fq(x)
                 const b = new Fq(y)
-                expect(a.mul(b).x).to.equal(z)
+                expect(a.mul(b).value).to.equal(z)
             }
         })
 
@@ -132,7 +132,7 @@ describe('finite fields', () => {
             )
             for (const [x, z] of testVectors) {
                 const a = new Fq(x)
-                expect(a.inv().x).to.equal(z)
+                expect(a.inv().value).to.equal(z)
             }
         })
     })
@@ -144,8 +144,8 @@ describe('finite fields', () => {
                 const a = Fq2.fromTuple(x)
                 const b = Fq2.fromTuple(y)
                 const result = a.add(b)
-                expect(result.x.x).to.eq(z[0])
-                expect(result.y.x).to.eq(z[1])
+                expect(result.x.value).to.eq(z[0])
+                expect(result.y.value).to.eq(z[1])
             }
         })
 
@@ -162,8 +162,8 @@ describe('finite fields', () => {
                 const a = Fq2.fromTuple(x)
                 const b = Fq2.fromTuple(y)
                 const result = a.sub(b)
-                expect(result.x.x).to.eq(z[0])
-                expect(result.y.x).to.eq(z[1])
+                expect(result.x.value).to.eq(z[0])
+                expect(result.y.value).to.eq(z[1])
             }
         })
 
@@ -173,8 +173,8 @@ describe('finite fields', () => {
                 const a = Fq2.fromTuple(x)
                 const b = Fq2.fromTuple(y)
                 const result = a.mul(b)
-                expect(result.x.x).to.eq(z[0])
-                expect(result.y.x).to.eq(z[1])
+                expect(result.x.value).to.eq(z[0])
+                expect(result.y.value).to.eq(z[1])
             }
         })
     })
@@ -183,78 +183,30 @@ describe('finite fields', () => {
         it('add', async () => {
             const testVectors = await readTestVectors<SFq6Vector, PFq6Vector>('fp6_add', reviveFq6)
             for (const [x, y, z] of testVectors) {
-                const a = Fq6.fromTuple([
-                    Fq2.fromTuple(x[0]),
-                    Fq2.fromTuple(x[1]),
-                    Fq2.fromTuple(x[2]),
-                ])
-                const b = Fq6.fromTuple([
-                    Fq2.fromTuple(y[0]),
-                    Fq2.fromTuple(y[1]),
-                    Fq2.fromTuple(y[2]),
-                ])
+                const a = Fq6.fromTuple([x[0], x[1], x[2]])
+                const b = Fq6.fromTuple([y[0], y[1], y[2]])
                 const result = a.add(b)
-                expect(
-                    result.equals(
-                        Fq6.fromTuple([
-                            Fq2.fromTuple(z[0]),
-                            Fq2.fromTuple(z[1]),
-                            Fq2.fromTuple(z[2]),
-                        ]),
-                    ),
-                ).to.eq(true)
+                expect(result.equals(Fq6.fromTuple([z[0], z[1], z[2]]))).to.eq(true)
             }
         })
 
         it('sub', async () => {
             const testVectors = await readTestVectors<SFq6Vector, PFq6Vector>('fp6_sub', reviveFq6)
             for (const [x, y, z] of testVectors) {
-                const a = Fq6.fromTuple([
-                    Fq2.fromTuple(x[0]),
-                    Fq2.fromTuple(x[1]),
-                    Fq2.fromTuple(x[2]),
-                ])
-                const b = Fq6.fromTuple([
-                    Fq2.fromTuple(y[0]),
-                    Fq2.fromTuple(y[1]),
-                    Fq2.fromTuple(y[2]),
-                ])
+                const a = Fq6.fromTuple([x[0], x[1], x[2]])
+                const b = Fq6.fromTuple([y[0], y[1], y[2]])
                 const result = a.sub(b)
-                expect(
-                    result.equals(
-                        Fq6.fromTuple([
-                            Fq2.fromTuple(z[0]),
-                            Fq2.fromTuple(z[1]),
-                            Fq2.fromTuple(z[2]),
-                        ]),
-                    ),
-                ).to.eq(true)
+                expect(result.equals(Fq6.fromTuple([z[0], z[1], z[2]]))).to.eq(true)
             }
         })
 
         it('mul', async () => {
             const testVectors = await readTestVectors<SFq6Vector, PFq6Vector>('fp6_mul', reviveFq6)
             for (const [x, y, z] of testVectors) {
-                const a = Fq6.fromTuple([
-                    Fq2.fromTuple(x[0]),
-                    Fq2.fromTuple(x[1]),
-                    Fq2.fromTuple(x[2]),
-                ])
-                const b = Fq6.fromTuple([
-                    Fq2.fromTuple(y[0]),
-                    Fq2.fromTuple(y[1]),
-                    Fq2.fromTuple(y[2]),
-                ])
+                const a = Fq6.fromTuple([x[0], x[1], x[2]])
+                const b = Fq6.fromTuple([y[0], y[1], y[2]])
                 const result = a.mul(b)
-                expect(
-                    result.equals(
-                        Fq6.fromTuple([
-                            Fq2.fromTuple(z[0]),
-                            Fq2.fromTuple(z[1]),
-                            Fq2.fromTuple(z[2]),
-                        ]),
-                    ),
-                ).to.eq(true)
+                expect(result.equals(Fq6.fromTuple([z[0], z[1], z[2]]))).to.eq(true)
             }
         })
     })
@@ -267,43 +219,19 @@ describe('finite fields', () => {
             )
             for (const [x, y, z] of testVectors) {
                 const a = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[0][0]),
-                        Fq2.fromTuple(x[0][1]),
-                        Fq2.fromTuple(x[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[1][0]),
-                        Fq2.fromTuple(x[1][1]),
-                        Fq2.fromTuple(x[1][2]),
-                    ]),
+                    [x[0][0], x[0][1], x[0][2]],
+                    [x[1][0], x[1][1], x[1][2]],
                 ])
                 const b = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[0][0]),
-                        Fq2.fromTuple(y[0][1]),
-                        Fq2.fromTuple(y[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[1][0]),
-                        Fq2.fromTuple(y[1][1]),
-                        Fq2.fromTuple(y[1][2]),
-                    ]),
+                    [y[0][0], y[0][1], y[0][2]],
+                    [y[1][0], y[1][1], y[1][2]],
                 ])
                 const result = a.add(b)
                 expect(
                     result.equals(
                         Fq12.fromTuple([
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[0][0]),
-                                Fq2.fromTuple(z[0][1]),
-                                Fq2.fromTuple(z[0][2]),
-                            ]),
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[1][0]),
-                                Fq2.fromTuple(z[1][1]),
-                                Fq2.fromTuple(z[1][2]),
-                            ]),
+                            [z[0][0], z[0][1], z[0][2]],
+                            [z[1][0], z[1][1], z[1][2]],
                         ]),
                     ),
                 ).to.eq(true)
@@ -317,43 +245,19 @@ describe('finite fields', () => {
             )
             for (const [x, y, z] of testVectors) {
                 const a = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[0][0]),
-                        Fq2.fromTuple(x[0][1]),
-                        Fq2.fromTuple(x[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[1][0]),
-                        Fq2.fromTuple(x[1][1]),
-                        Fq2.fromTuple(x[1][2]),
-                    ]),
+                    [x[0][0], x[0][1], x[0][2]],
+                    [x[1][0], x[1][1], x[1][2]],
                 ])
                 const b = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[0][0]),
-                        Fq2.fromTuple(y[0][1]),
-                        Fq2.fromTuple(y[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[1][0]),
-                        Fq2.fromTuple(y[1][1]),
-                        Fq2.fromTuple(y[1][2]),
-                    ]),
+                    [y[0][0], y[0][1], y[0][2]],
+                    [y[1][0], y[1][1], y[1][2]],
                 ])
                 const result = a.sub(b)
                 expect(
                     result.equals(
                         Fq12.fromTuple([
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[0][0]),
-                                Fq2.fromTuple(z[0][1]),
-                                Fq2.fromTuple(z[0][2]),
-                            ]),
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[1][0]),
-                                Fq2.fromTuple(z[1][1]),
-                                Fq2.fromTuple(z[1][2]),
-                            ]),
+                            [z[0][0], z[0][1], z[0][2]],
+                            [z[1][0], z[1][1], z[1][2]],
                         ]),
                     ),
                 ).to.eq(true)
@@ -367,43 +271,19 @@ describe('finite fields', () => {
             )
             for (const [x, y, z] of testVectors) {
                 const a = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[0][0]),
-                        Fq2.fromTuple(x[0][1]),
-                        Fq2.fromTuple(x[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(x[1][0]),
-                        Fq2.fromTuple(x[1][1]),
-                        Fq2.fromTuple(x[1][2]),
-                    ]),
+                    [x[0][0], x[0][1], x[0][2]],
+                    [x[1][0], x[1][1], x[1][2]],
                 ])
                 const b = Fq12.fromTuple([
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[0][0]),
-                        Fq2.fromTuple(y[0][1]),
-                        Fq2.fromTuple(y[0][2]),
-                    ]),
-                    Fq6.fromTuple([
-                        Fq2.fromTuple(y[1][0]),
-                        Fq2.fromTuple(y[1][1]),
-                        Fq2.fromTuple(y[1][2]),
-                    ]),
+                    [y[0][0], y[0][1], y[0][2]],
+                    [y[1][0], y[1][1], y[1][2]],
                 ])
                 const result = a.mul(b)
                 expect(
                     result.equals(
                         Fq12.fromTuple([
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[0][0]),
-                                Fq2.fromTuple(z[0][1]),
-                                Fq2.fromTuple(z[0][2]),
-                            ]),
-                            Fq6.fromTuple([
-                                Fq2.fromTuple(z[1][0]),
-                                Fq2.fromTuple(z[1][1]),
-                                Fq2.fromTuple(z[1][2]),
-                            ]),
+                            [z[0][0], z[0][1], z[0][2]],
+                            [z[1][0], z[1][1], z[1][2]],
                         ]),
                     ),
                 ).to.eq(true)

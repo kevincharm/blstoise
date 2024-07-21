@@ -86,17 +86,17 @@ function lineDouble(r: PointG2, p: PointG1): Fq12 {
         .mul(Fq12.fromNumber(3n))
         .mul(wideR.y.mul(Fq12.fromNumber(2n)).inv())
     const v = wideR.y.sub(slope.mul(wideR.x))
-    return Fq12.fromNumber(p.y.x).sub(Fq12.fromNumber(p.x.x).mul(slope)).sub(v)
+    return Fq12.fromNumber(p.y.value).sub(Fq12.fromNumber(p.x.value).mul(slope)).sub(v)
 }
 
 function lineAdd(r: PointG2, q: PointG2, p: PointG1): Fq12 {
     const wideR = r.untwist()
     const wideQ = q.untwist()
     if (wideR.x.equals(wideQ.x) && wideR.y.equals(wideQ.y.neg())) {
-        return Fq12.fromNumber(p.x.x).sub(wideR.x)
+        return Fq12.fromNumber(p.x.value).sub(wideR.x)
     } else {
         const slope = wideQ.y.sub(wideR.y).mul(wideQ.x.sub(wideR.x).inv())
         const v = wideQ.y.mul(wideR.x).sub(wideR.y.mul(wideQ.x)).mul(wideR.x.sub(wideQ.x).inv())
-        return Fq12.fromNumber(p.y.x).sub(Fq12.fromNumber(p.x.x).mul(slope)).sub(v)
+        return Fq12.fromNumber(p.y.value).sub(Fq12.fromNumber(p.x.value).mul(slope)).sub(v)
     }
 }
