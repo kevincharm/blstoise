@@ -3,6 +3,8 @@
 // Ref tower_to_direct_extension.py from feltroidprime: https://gist.github.com/feltroidprime/bd31ab8e0cbc0bf8cd952c8b8ed55bf5
 //  and "Faster Extension Field multiplications for Emulated Pairing Circuits": https://hackmd.io/@feltroidprime/B1eyHHXNT
 import { egcd, Fq12, mod } from './ff'
+import { pair } from './pairing'
+import { PointG1, PointG2 } from './point'
 import { assert } from './utils'
 
 const x = -0xd201000000010000n
@@ -164,9 +166,11 @@ export function computeWitness(f: Fq12) {
     }
 }
 
-export function verifyEquivalentPairings(fs: [Fq12, Fq12], c: Fq12, wi: Fq12): boolean {
-    const [p, q] = fs
-    const f = p.mul(q)
+export function verifyEquivalentPairings(ps: PointG1[], qs: PointG2[], c: Fq12, wi: Fq12): boolean {
+    let f = Fq12.one()
+    for (let i = 0; i < ps.length; i++) {
+        f = f.mul(pair(ps[i], qs[i]))
+    }
     const c_inv = c.inv()
     return c_inv.exp(lambda).mul(f).mul(wi).equals(Fq12.one())
 }
