@@ -14,7 +14,7 @@ export function pair(p: PointG1, q: PointG2): Fq12 {
         throw new Error(`Invalid point: ${q}`)
     }
     const r = miller(p, q)
-    return finalExp(r, (P ** 12n - 1n) / R)
+    return r.exp((P ** 12n - 1n) / R)
 }
 
 export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
@@ -31,25 +31,11 @@ export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
         const r = miller(p, q)
         result = result.mul(r)
     }
-    result = finalExp(result, (P ** 12n - 1n) / R)
+    result = result.exp((P ** 12n - 1n) / R)
     return result.equals(Fq12.one())
 }
 
-function finalExp(a0: Fq12, exp: bigint): Fq12 {
-    let result = Fq12.one()
-    while (exp > 1n) {
-        if ((exp & 1n) === 0n) {
-            exp >>= 1n
-        } else {
-            result = result.mul(a0)
-            exp = (exp - 1n) >> 1n
-        }
-        a0 = a0.mul(a0)
-    }
-    return a0.mul(result)
-}
-
-function miller(p: PointG1, q: PointG2): Fq12 {
+export function miller(p: PointG1, q: PointG2): Fq12 {
     // Binary representation of curve parameter B
     // NB: This can be precomputed!
     const iterations: boolean[] = []

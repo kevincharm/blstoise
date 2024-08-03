@@ -47,3 +47,13 @@ export function toHex(bytes: Uint8Array) {
         .map((x) => x.toString(16).padStart(2, '0'))
         .join('')
 }
+
+export function assert(cond: boolean, msg?: string) {
+    if (!cond) {
+        if (msg) {
+            throw new Error(msg)
+        } else {
+            throw new Error('Assertion failed')
+        }
+    }
+}

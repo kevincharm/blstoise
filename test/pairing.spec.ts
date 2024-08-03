@@ -1,8 +1,9 @@
 import { expect } from 'chai'
-import { pair, validatePairing } from '../src/pairing'
+import { miller, pair, validatePairing } from '../src/pairing'
 import { PointG1, PointG2 } from '../src/point'
 import { Fq, Fq12, Fq2, R } from '../src/ff'
 import testVectors from './vectors/bls_pairing'
+import { computeWitness, verifyEquivalentPairings } from '../src/witness'
 
 function toFp(hex: Buffer): Fq {
     return new Fq(BigInt(`0x${hex.toString('hex')}`))
@@ -52,6 +53,15 @@ describe('pairing', () => {
             expect(validatePairing(ps, qs)).to.eq(result)
         }).timeout(0) // pairing is mad slow bruv
     }
+
+    it('compute witness residues', () => {
+        // Get equivalent pairings x and y
+        const x = pair(g1, g2)
+        const y = pair(g1.neg(), g2)
+        // Compute the witness for equivalent pairing check
+        const { c, wi } = computeWitness(x.mul(y))
+        expect(verifyEquivalentPairings([x, y], c, wi)).to.eq(true)
+    })
 })
 
 function parseGethTest(vector: (typeof testVectors)[number]) {

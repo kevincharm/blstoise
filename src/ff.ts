@@ -15,6 +15,15 @@ export function modp(n: bigint): bigint {
     return mod(n, P)
 }
 
+export function egcd(a: bigint, b: bigint): [bigint, bigint, bigint] {
+    if (a === 0n) {
+        return [b, 0n, 1n]
+    } else {
+        const [g, y, x] = egcd(mod(b, a), a)
+        return [g, x - (b / a) * y, y]
+    }
+}
+
 // x * y (mod p)
 export function mulmodp(x: bigint, y: bigint): bigint {
     return mod(x * y, P)
@@ -495,6 +504,20 @@ export class Fq12 implements Field {
         const x = t1.add(t2.mulByNonResidue())
         const y = a0.add(a1).mul(b0.add(b1)).sub(t1.add(t2))
         return new Fq12(x, y)
+    }
+
+    exp(y: bigint): Fq12 {
+        let x: Fq12 = this
+        let result = Fq12.one()
+        while (y > 0) {
+            const lsb = y & 1n
+            y = y / 2n
+            if (lsb) {
+                result = result.mul(x)
+            }
+            x = x.mul(x)
+        }
+        return result
     }
 
     inv(): Fq12 {
