@@ -1,10 +1,13 @@
-// BLS12-381 field prime
-export const P =
-    0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaabn
-// BLS12-381 curve order
-export const R = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001n
-// BLS12-381 x parameter used for the construction of the curve
-export const X = 0xd201000000010000n
+// https://gist.github.com/HarryR/eb5ad0e5de51633678e015a6b06969a1
+export const X = -0xd201000000010000n
+// Curve order
+export const R = X ** 4n - X ** 2n + 1n
+// Field modulus
+export const Q = ((X - 1n) ** 2n / 3n) * R + X
+
+export function abs(n: bigint): bigint {
+    return n < 0n ? -n : n
+}
 
 // n mod m
 export function mod(n: bigint, m: bigint): bigint {
@@ -12,7 +15,7 @@ export function mod(n: bigint, m: bigint): bigint {
 }
 
 export function modp(n: bigint): bigint {
-    return mod(n, P)
+    return mod(n, Q)
 }
 
 export function egcd(a: bigint, b: bigint): [bigint, bigint, bigint] {
@@ -26,7 +29,7 @@ export function egcd(a: bigint, b: bigint): [bigint, bigint, bigint] {
 
 // x * y (mod p)
 export function mulmodp(x: bigint, y: bigint): bigint {
-    return mod(x * y, P)
+    return mod(x * y, Q)
 }
 
 export function modexp(x: bigint, y: bigint, p: bigint): bigint {
@@ -53,8 +56,8 @@ function gcd(u: bigint, v: bigint, x1: bigint, x2: bigint, p: bigint): bigint {
     }
 
     // Base cases
-    if (u === 1n) return mod(x1, P)
-    if (v === 1n) return mod(x2, P)
+    if (u === 1n) return mod(x1, Q)
+    if (v === 1n) return mod(x2, Q)
     if (u % 2n === 0n) {
         if (x1 % 2n === 0n) {
             return gcd(u >> 1n, v, x1 >> 1n, x2, p)
@@ -66,7 +69,7 @@ function gcd(u: bigint, v: bigint, x1: bigint, x2: bigint, p: bigint): bigint {
         if (x2 % 2n === 0n) {
             return gcd(u, v >> 1n, x1, x2 >> 1n, p)
         } else {
-            return gcd(u, v >> 1n, x1, (x2 + P) >> 1n, p)
+            return gcd(u, v >> 1n, x1, (x2 + Q) >> 1n, p)
         }
     }
     if (u >= v) {
@@ -141,7 +144,7 @@ export class Fq implements Field {
     value: bigint
 
     constructor(x: bigint) {
-        this.value = mod(x, P)
+        this.value = mod(x, Q)
     }
 
     static zero(): Fq {
@@ -184,7 +187,7 @@ export class Fq implements Field {
         if (this.value === 0n) {
             throw new Error(`Inversion of zero`)
         }
-        return new Fq(gcd(this.value, P, 1n, 0n, P))
+        return new Fq(gcd(this.value, Q, 1n, 0n, Q))
     }
 
     exp(y: bigint): Fq {
@@ -202,18 +205,18 @@ export class Fq implements Field {
     }
 
     legendre(): number {
-        const x = this.exp((P - 1n) / 2n)
-        if (x.equals(new Fq(P - 1n))) {
+        const x = this.exp((Q - 1n) / 2n)
+        if (x.equals(new Fq(Q - 1n))) {
             return -1
         }
         if (!x.equals(Fq.zero()) && !x.equals(new Fq(1n))) {
-            throw new Error(`Legendre failed: ${this}^{(${P}-1)//2} = ${x}`)
+            throw new Error(`Legendre failed: ${this}^{(${Q}-1)//2} = ${x}`)
         }
         return Number(x)
     }
 
     sqrt(): Fq {
-        const root = this.exp((P + 1n) / 4n)
+        const root = this.exp((Q + 1n) / 4n)
         if (!root.mul(root).equals(this)) {
             throw new Error(`No square root exists for ${this}`)
         }
@@ -243,7 +246,7 @@ export class Fq implements Field {
 /// Quadratic extension to Fq
 export class Fq2 implements Field {
     // This is taken from consensus specs
-    static readonly ORDER = P ** 2n
+    static readonly ORDER = Q ** 2n
     static readonly EIGHTH_ROOTS_OF_UNITY = Array.from({ length: 8 }, (_, k) =>
         Fq2.fromTuple([1n, 1n]).exp((Fq2.ORDER * BigInt(k)) / 8n),
     )
@@ -251,7 +254,7 @@ export class Fq2 implements Field {
         (_, i) => i % 2 === 0,
     )
     static readonly NON_RESIDUE = Fq2.fromTuple([1n, 1n])
-    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(new Fq(-1n), P, 2n)
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(new Fq(-1n), Q, 2n)
 
     x: Fq
     y: Fq
@@ -401,7 +404,7 @@ type Fq2Tuple = ReturnType<Fq2['toTuple']>
 
 /// Cubic extension to Fq2
 export class Fq6 implements Field {
-    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, P, 6n, 2n, 3n)
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, Q, 6n, 2n, 3n)
 
     x: Fq2
     y: Fq2
@@ -543,7 +546,7 @@ type Fq6Tuple = ReturnType<Fq6['toTuple']>
 
 /// 12th degree extension to Fq
 export class Fq12 implements Field {
-    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, P, 12n, 1n, 6n)
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, Q, 12n, 1n, 6n)
 
     x: Fq6
     y: Fq6
@@ -664,7 +667,7 @@ export class Fq12 implements Field {
         const len = bitlen(power)
         for (let i = BigInt(len - 1); i >= 0n; i--) {
             z = z.cyclotomicSquare()
-            if ((X >> i) & 1n) {
+            if ((power >> i) & 1n) {
                 z = this.mul(z)
             }
         }
@@ -673,16 +676,17 @@ export class Fq12 implements Field {
 
     // Borrowed from https://github.com/paulmillr/noble-curves/blob/main/src/bls12-381.ts
     finalExp(): Fq12 {
+        const x = abs(X)
         // this^(q⁶) / this
         const t0 = this.frobeniusMap(6n).mul(this.inv())
         // t0^(q²) * t0
         const t1 = t0.frobeniusMap(2n).mul(t0)
-        const t2 = t1.cyclotomicExp(X).conjugate()
+        const t2 = t1.cyclotomicExp(x).conjugate()
         const t3 = t1.cyclotomicSquare().conjugate().mul(t2)
-        const t4 = t3.cyclotomicExp(X).conjugate()
-        const t5 = t4.cyclotomicExp(X).conjugate()
-        const t6 = t5.cyclotomicExp(X).conjugate().mul(t2.cyclotomicSquare())
-        const t7 = t6.cyclotomicExp(X).conjugate()
+        const t4 = t3.cyclotomicExp(x).conjugate()
+        const t5 = t4.cyclotomicExp(x).conjugate()
+        const t6 = t5.cyclotomicExp(x).conjugate().mul(t2.cyclotomicSquare())
+        const t7 = t6.cyclotomicExp(x).conjugate()
         const t2_t5_pow_q2 = t2.mul(t5).frobeniusMap(2n)
         const t4_t1_pow_q3 = t4.mul(t1).frobeniusMap(3n)
         const t6_t1c_pow_q1 = t6.mul(t1.conjugate()).frobeniusMap(1n)

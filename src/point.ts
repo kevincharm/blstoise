@@ -1,4 +1,4 @@
-import { Field, Fq, Fq12, Fq2, Fq6, R, X } from './ff'
+import { abs, Field, Fq, Fq12, Fq2, Fq6, R, X } from './ff'
 import { toBigInt } from './utils'
 
 export interface Point<F extends Field> {
@@ -154,7 +154,7 @@ export class PointG1 implements PointInstanceType<Fq> {
     clearCofactor(): PointG1 {
         // To map an element p in E(Fq) to G1, we can exponentiate p by 1-x
         // https://eprint.iacr.org/2019/403.pdf Section 5 "Clearing cofactors"
-        return this.mul(X).add(this)
+        return this.mul(abs(X)).add(this)
     }
 
     isOnCurve(): boolean {

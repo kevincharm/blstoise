@@ -1,4 +1,4 @@
-import { Fq, Fq12, Fq2, Fq6, P } from './ff'
+import { Fq, Fq12, Fq2, Fq6, Q } from './ff'
 
 export function randomFq12(): Fq12 {
     return new Fq12(randomFq6(), randomFq6())
@@ -13,7 +13,7 @@ export function randomFq2(): Fq2 {
 }
 
 export function randomFq(): Fq {
-    return new Fq(randomBigIntModP(48, P))
+    return new Fq(randomBigIntModP(48, Q))
 }
 
 export function randomBigIntModP(bytes: number, p: bigint): bigint {

@@ -2,20 +2,17 @@
 // Ref bls-lambda-roots.ipynb from Novakovic: https://github.com/akinovak/garaga/blob/4af45d5fd88bc92bfb775cd1c5c8836edfcd5c68/hydra/hints/bls-lambda-roots.ipynb
 // Ref tower_to_direct_extension.py from feltroidprime: https://gist.github.com/feltroidprime/bd31ab8e0cbc0bf8cd952c8b8ed55bf5
 //  and "Faster Extension Field multiplications for Emulated Pairing Circuits": https://hackmd.io/@feltroidprime/B1eyHHXNT
-import { egcd, Fq12, mod } from './ff'
+import { egcd, Fq12, mod, Q, R } from './ff'
 import { pair } from './pairing'
 import { PointG1, PointG2 } from './point'
 import { assert } from './utils'
 
-const x = -0xd201000000010000n
-const k = 12n
-const r = x ** 4n - x ** 2n + 1n
-const q = ((x - 1n) ** 2n / 3n) * r + x
-const h = (q ** k - 1n) / r
+const k = 12n // Embedding degree, as in BLS12
+const h = (Q ** k - 1n) / R
 
 const lambda =
     4002409555221667393417789825735904156556882819939007885332058136124031650490837864442687629129030796414117214202539n
-const m = lambda / r
+const m = lambda / R
 
 const p = 5044125407647214251n
 const h3 =

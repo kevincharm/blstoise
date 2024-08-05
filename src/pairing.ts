@@ -1,4 +1,4 @@
-import { Fq12, P, R, X } from './ff'
+import { abs, Fq12, X } from './ff'
 import { PointG1, PointG2 } from './point'
 
 // Compute asymmetric pairing e(p,q)
@@ -39,7 +39,7 @@ export function miller(p: PointG1, q: PointG2): Fq12 {
     // Binary representation of curve parameter B
     // NB: This can be precomputed!
     const iterations: boolean[] = []
-    let curveX = X
+    let curveX = abs(X)
     while (curveX > 0n) {
         const isOddBit = Boolean(curveX & 1n)
         iterations.push(isOddBit)

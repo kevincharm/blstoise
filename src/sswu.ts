@@ -1,4 +1,4 @@
-import { modp, mulmodp, mod, P, modexp } from './ff'
+import { modp, mulmodp, mod, Q, modexp } from './ff'
 
 // 11-isogeny curve to BLS12-381 G1
 export const A =
@@ -83,7 +83,7 @@ export function mapToPointSSWU(u: bigint): [bigint, bigint] {
     tv2 = modp(tv2 + tv1)
     let tv3 = modp(tv2 + 1n)
     tv3 = mulmodp(B, tv3)
-    let tv4 = cmov(Z, P - tv2, tv2 !== 0n)
+    let tv4 = cmov(Z, Q - tv2, tv2 !== 0n)
     tv4 = mulmodp(A, tv4)
     tv2 = mulmodp(tv3, tv3)
     let tv6 = mulmodp(tv4, tv4)
@@ -100,8 +100,8 @@ export function mapToPointSSWU(u: bigint): [bigint, bigint] {
     x = cmov(x, tv3, is_gx1_square)
     y = cmov(y, y1, is_gx1_square)
     const e1 = sgn0(u) === sgn0(y)
-    y = cmov(P - y, y, e1)
-    x = mulmodp(x, inv0(tv4, P))
+    y = cmov(Q - y, y, e1)
+    x = mulmodp(x, inv0(tv4, Q))
     return isoMapG1(x, y)
 }
 
@@ -119,12 +119,12 @@ function isoMapG1(u: bigint, v: bigint): [bigint, bigint] {
     // y_num = k_(3,15) * x'^15 + k_(3,14) * x'^14 + k_(3,13) * x'^13 + ... + k_(3,0)
     const y_num = k3.reduce((acc, i) => modp(i + mulmodp(u, acc)), 0n)
     // y_den = x'^15 + k_(4,14) * x'^14 + k_(4,13) * x'^13 + ... + k_(4,0)
-    const y_den = [1n].concat(k4).reduce((acc, i) => mod(i + mulmodp(u, acc), P), 0n)
+    const y_den = [1n].concat(k4).reduce((acc, i) => mod(i + mulmodp(u, acc), Q), 0n)
 
     // x = x_num / x_den
-    const x = mulmodp(x_num, inv0(x_den, P))
+    const x = mulmodp(x_num, inv0(x_den, Q))
     // y = y' * y_num / y_den
-    const y = mulmodp(v, mulmodp(y_num, inv0(y_den, P)))
+    const y = mulmodp(v, mulmodp(y_num, inv0(y_den, Q)))
 
     return [x, y]
 }
@@ -146,7 +146,7 @@ function sqrtRatio3mod4(
     let tv1 = mulmodp(v, v)
     let tv2 = mulmodp(u, v)
     tv1 = mulmodp(tv1, tv2)
-    let y1 = modexp(tv1, C1, P)
+    let y1 = modexp(tv1, C1, Q)
     y1 = mulmodp(y1, tv2)
     let y2 = mulmodp(y1, C2)
     const tv3 = mulmodp(mulmodp(y1, y1), v)
