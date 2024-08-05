@@ -35,23 +35,14 @@ export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
     return result.equals(Fq12.one())
 }
 
-export function miller(p: PointG1, q: PointG2): Fq12 {
-    // Binary representation of curve parameter B
-    // NB: This can be precomputed!
-    const iterations: boolean[] = []
-    let curveX = abs(X)
-    while (curveX > 0n) {
-        const isOddBit = Boolean(curveX & 1n)
-        iterations.push(isOddBit)
-        curveX >>= 1n
-    }
-    iterations.pop()
-    iterations.reverse()
+// Binary representation of curve parameter B
+const millerIterations = abs(X).toString(2).split('').slice(1).map(Number).map(Boolean)
 
+export function miller(p: PointG1, q: PointG2): Fq12 {
     // Miller loop
     let acc = Fq12.one()
     let r = q.clone()
-    for (const i of iterations) {
+    for (const i of millerIterations) {
         const doubleR = r.double()
         acc = acc.mul(acc).mul(lineDouble(r, p))
 
