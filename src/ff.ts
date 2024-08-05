@@ -74,16 +74,56 @@ function gcd(u: bigint, v: bigint, x1: bigint, x2: bigint, p: bigint): bigint {
     throw new Error(`GCD failed with u,v=${u},${v} x1,x2=${x1},${x2} p=${p}`)
 }
 
+function frobeniusCoeffsPowers(modulus: bigint, degree: bigint, num?: bigint, divisor?: bigint) {
+    divisor = divisor || degree
+    num = num || 1n
+    const tower_modulus = modulus ** degree
+    const powers = []
+    for (let i = 0n; i < num; i++) {
+        const a = i + 1n
+        let q_power = 1n
+        const ps = []
+        for (let j = 0; j < degree; j++) {
+            ps.push(mod((a * q_power - a) / divisor, tower_modulus))
+            q_power *= modulus
+        }
+        powers.push(ps)
+    }
+    return powers
+}
+
+// https://gist.github.com/HarryR/eb5ad0e5de51633678e015a6b06969a1
+function frobeniusCoeffs<F extends Field>(
+    nonResidue: F,
+    modulus: bigint,
+    degree: bigint,
+    num?: bigint,
+    divisor?: bigint,
+) {
+    const coeffs: F[][] = []
+    const allPowers = frobeniusCoeffsPowers(modulus, degree, num, divisor)
+    for (let i = 0; i < allPowers.length; i++) {
+        const powers = allPowers[i]
+        coeffs.push([])
+        for (const p_i of powers) {
+            coeffs[i].push(nonResidue.exp(p_i) as F)
+        }
+    }
+    return coeffs
+}
+
 export interface Field {
-    equals(rhs: Field): boolean
-    add(rhs: Field): Field
-    sub(rhs: Field): Field
-    mul(rhs: Field): Field
+    equals(rhs: ThisType<this>): boolean
+    add(rhs: ThisType<this>): ThisType<this>
+    sub(rhs: ThisType<this>): ThisType<this>
+    mul(rhs: ThisType<this>): ThisType<this>
+    exp(rhs: bigint): ThisType<this>
     toString(): string
     toJSON(): any
-    neg(): Field
-    inv(): Field
-    // mulByScalar(c: bigint): Field
+    neg(): ThisType<this>
+    inv(): ThisType<this>
+    conjugate?(): ThisType<this>
+    // mulByScalar(c: bigint):ThisType<this>
 }
 
 export class Fq implements Field {
@@ -169,6 +209,10 @@ export class Fq implements Field {
         return root
     }
 
+    conjugate(): Fq {
+        return new Fq(this.value)
+    }
+
     signBigEndian(): boolean {
         const negV = this.neg()
         return this.lt(negV)
@@ -195,6 +239,8 @@ export class Fq2 implements Field {
     static readonly EVEN_EIGHT_ROOTS_OF_UNITY = Fq2.EIGHTH_ROOTS_OF_UNITY.filter(
         (_, i) => i % 2 === 0,
     )
+    static readonly NON_RESIDUE = Fq2.fromTuple([1n, 1n])
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(new Fq(-1n), P, 2n)
 
     x: Fq
     y: Fq
@@ -308,6 +354,17 @@ export class Fq2 implements Field {
         }
     }
 
+    conjugate(): Fq2 {
+        return new Fq2(this.x, this.y.neg())
+    }
+
+    frobeniusMap(power: bigint): Fq2 {
+        if (power & 1n) {
+            return this.conjugate()
+        }
+        return new Fq2(this.x, this.y)
+    }
+
     signBigEndian(): boolean {
         const negV = this.neg()
         return this.lt(negV)
@@ -333,6 +390,8 @@ type Fq2Tuple = ReturnType<Fq2['toTuple']>
 
 /// Cubic extension to Fq2
 export class Fq6 implements Field {
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, P, 6n, 2n, 3n)
+
     x: Fq2
     y: Fq2
     z: Fq2
@@ -403,6 +462,20 @@ export class Fq6 implements Field {
         return new Fq6(z0, z1, z2)
     }
 
+    exp(y: bigint): Fq6 {
+        let x: Fq6 = this
+        let result = Fq6.one()
+        while (y > 0) {
+            const lsb = y & 1n
+            y = y / 2n
+            if (lsb) {
+                result = result.mul(x)
+            }
+            x = x.mul(x)
+        }
+        return result
+    }
+
     mulByNonResidue(): Fq6 {
         return new Fq6(this.z.mulByNonResidue(), this.x, this.y)
     }
@@ -420,6 +493,18 @@ export class Fq6 implements Field {
             .add(a1.mul(t2).mulByNonResidue())
             .inv()
         return new Fq6(t0.mul(factor), t1.mul(factor), t2.mul(factor))
+    }
+
+    conjugate(): Fq6 {
+        return new Fq6(this.x, this.y.neg(), this.z) // ???
+    }
+
+    frobeniusMap(power: bigint): Fq6 {
+        const x = this.x.frobeniusMap(power)
+        const c = Number(power % 6n)
+        const y = this.y.frobeniusMap(power).mul(Fq6.FROBENIUS_COEFFICIENTS[0][c])
+        const z = this.z.frobeniusMap(power).mul(Fq6.FROBENIUS_COEFFICIENTS[1][c])
+        return new Fq6(x, y, z)
     }
 
     toString() {
@@ -447,6 +532,8 @@ type Fq6Tuple = ReturnType<Fq6['toTuple']>
 
 /// 12th degree extension to Fq
 export class Fq12 implements Field {
+    static readonly FROBENIUS_COEFFICIENTS = frobeniusCoeffs(Fq2.NON_RESIDUE, P, 12n, 1n, 6n)
+
     x: Fq6
     y: Fq6
     constructor(x: Fq6, y: Fq6) {
@@ -527,6 +614,17 @@ export class Fq12 implements Field {
         const x = a0.mul(factor)
         const y = a1.neg().mul(factor)
         return new Fq12(x, y)
+    }
+
+    conjugate(): Fq12 {
+        return new Fq12(this.x, this.y.neg())
+    }
+
+    frobeniusMap(power: bigint): Fq12 {
+        const x = this.x.frobeniusMap(power)
+        const { x: y0, y: y1, z: y2 } = this.y.frobeniusMap(power)
+        const coeff = Fq12.FROBENIUS_COEFFICIENTS[0][Number(power % 12n)]
+        return new Fq12(x, new Fq6(y0.mul(coeff), y1.mul(coeff), y2.mul(coeff)))
     }
 
     toString() {
