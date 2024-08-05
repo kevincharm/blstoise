@@ -42,6 +42,10 @@ export function modexp(x: bigint, y: bigint, p: bigint): bigint {
     return result
 }
 
+function bitlen(n: bigint): number {
+    return n.toString(2).length
+}
+
 // Euclidean GCD extended binary algorithm
 function gcd(u: bigint, v: bigint, x1: bigint, x2: bigint, p: bigint): bigint {
     if (!(u > 0n && v > 0n)) {
@@ -110,6 +114,13 @@ function frobeniusCoeffs<F extends Field>(
         }
     }
     return coeffs
+}
+
+function fq4Square(a: Fq2, b: Fq2): [Fq2, Fq2] {
+    const a2 = a.mul(a)
+    const b2 = b.mul(b)
+    const abSum = a.add(b)
+    return [b2.mulByNonResidue().add(a2), abSum.mul(abSum).sub(a2).sub(b2)]
 }
 
 export interface Field {
@@ -625,6 +636,59 @@ export class Fq12 implements Field {
         const { x: y0, y: y1, z: y2 } = this.y.frobeniusMap(power)
         const coeff = Fq12.FROBENIUS_COEFFICIENTS[0][Number(power % 12n)]
         return new Fq12(x, new Fq6(y0.mul(coeff), y1.mul(coeff), y2.mul(coeff)))
+    }
+
+    // https://eprint.iacr.org/2009/565.pdf
+    cyclotomicSquare(): Fq12 {
+        const { x: xx, y: xy, z: xz } = this.x
+        const { x: yx, y: yy, z: yz } = this.y
+        const [t3, t4] = fq4Square(xx, yy)
+        const [t5, t6] = fq4Square(yx, xz)
+        const [t7, t8] = fq4Square(xy, yz)
+        const t9 = t8.mulByNonResidue()
+        const x = new Fq6(
+            t3.sub(xx).mulByScalar(2n).add(t3),
+            t5.sub(xy).mulByScalar(2n).add(t5),
+            t7.sub(xz).mulByScalar(2n).add(t7),
+        )
+        const y = new Fq6(
+            t9.add(yx).mulByScalar(2n).add(t9),
+            t4.add(yy).mulByScalar(2n).add(t4),
+            t6.add(yz).mulByScalar(2n).add(t6),
+        )
+        return new Fq12(x, y)
+    }
+
+    cyclotomicExp(power: bigint): Fq12 {
+        let z = Fq12.one()
+        const len = bitlen(power)
+        for (let i = BigInt(len - 1); i >= 0n; i--) {
+            z = z.cyclotomicSquare()
+            if ((X >> i) & 1n) {
+                z = this.mul(z)
+            }
+        }
+        return z
+    }
+
+    // Borrowed from https://github.com/paulmillr/noble-curves/blob/main/src/bls12-381.ts
+    finalExp(): Fq12 {
+        // this^(q⁶) / this
+        const t0 = this.frobeniusMap(6n).mul(this.inv())
+        // t0^(q²) * t0
+        const t1 = t0.frobeniusMap(2n).mul(t0)
+        const t2 = t1.cyclotomicExp(X).conjugate()
+        const t3 = t1.cyclotomicSquare().conjugate().mul(t2)
+        const t4 = t3.cyclotomicExp(X).conjugate()
+        const t5 = t4.cyclotomicExp(X).conjugate()
+        const t6 = t5.cyclotomicExp(X).conjugate().mul(t2.cyclotomicSquare())
+        const t7 = t6.cyclotomicExp(X).conjugate()
+        const t2_t5_pow_q2 = t2.mul(t5).frobeniusMap(2n)
+        const t4_t1_pow_q3 = t4.mul(t1).frobeniusMap(3n)
+        const t6_t1c_pow_q1 = t6.mul(t1.conjugate()).frobeniusMap(1n)
+        const t7_t3c_t1 = t7.mul(t3.conjugate()).mul(t1)
+        // (t2 * t5)^(q²) * (t4 * t1)^(q³) * (t6 * t1.conj)^(q^1) * t7 * t3.conj * t1
+        return t2_t5_pow_q2.mul(t4_t1_pow_q3).mul(t6_t1c_pow_q1).mul(t7_t3c_t1)
     }
 
     toString() {

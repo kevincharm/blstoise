@@ -55,17 +55,16 @@ describe('pairing', () => {
         }).timeout(0) // pairing is mad slow bruv
 
         // Test computing witness residues for valid pairings
-        // NB: These are sloooooooooooow
-        // if (result) {
-        //     it(`[geth] ${testVector.Name} (${ps.length} pairings) -> compute witness residues`, () => {
-        //         let f = Fq12.one()
-        //         for (let i = 0; i < ps.length; i++) {
-        //             f = f.mul(pair(ps[i], qs[i]))
-        //         }
-        //         const { c, wi } = computeWitness(f)
-        //         expect(verifyEquivalentPairings(ps, qs, c, wi)).to.eq(true)
-        //     }).timeout(0)
-        // }
+        if (result) {
+            it(`[geth] ${testVector.Name} (${ps.length} pairings) -> compute witness residues`, () => {
+                let f = Fq12.one()
+                for (let i = 0; i < ps.length; i++) {
+                    f = f.mul(pair(ps[i], qs[i]))
+                }
+                const { c, wi } = computeWitness(f)
+                expect(verifyEquivalentPairings(ps, qs, c, wi)).to.eq(true)
+            }).timeout(0)
+        }
     }
 
     it('compute and verify witness residues', () => {

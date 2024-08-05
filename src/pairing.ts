@@ -14,7 +14,7 @@ export function pair(p: PointG1, q: PointG2): Fq12 {
         throw new Error(`Invalid point: ${q}`)
     }
     const r = miller(p, q)
-    return r.exp((P ** 12n - 1n) / R)
+    return r.finalExp()
 }
 
 export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
@@ -31,7 +31,7 @@ export function validatePairing(ps: PointG1[], qs: PointG2[]): boolean {
         const r = miller(p, q)
         result = result.mul(r)
     }
-    result = result.exp((P ** 12n - 1n) / R)
+    result = result.finalExp()
     return result.equals(Fq12.one())
 }
 
