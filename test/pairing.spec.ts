@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { pair, validatePairing } from '../src/pairing'
 import { PointG1, PointG2 } from '../src/point'
-import { Fq, Fq12, Fq2, R } from '../src/ff'
+import { Fq, Fq12, Fq2 } from '../src/ff'
 import testVectors from './vectors/bls_pairing'
 import { computeWitness, verifyEquivalentPairings } from '../src/witness'
 
