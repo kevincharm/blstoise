@@ -4,14 +4,14 @@ import { toBigInt } from './utils'
 export interface Point<F extends Field> {
     x: F
     y: F
-    equals(rhs: Point<F>): boolean
+    equals(rhs: ThisType<this>): boolean
     isOnCurve(): boolean
     isInSubgroup(): boolean
-    add(rhs: Point<F>): Point<F>
-    double(): Point<F>
-    neg(): Point<F>
-    mul(c: bigint): Point<F>
-    clone(): Point<F>
+    add(rhs: ThisType<this>): ThisType<this>
+    double(): ThisType<this>
+    neg(): ThisType<this>
+    mul(c: bigint): ThisType<this>
+    clone(): ThisType<this>
 }
 
 export interface PointClassType<F extends Field> {

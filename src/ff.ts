@@ -49,36 +49,26 @@ function bitlen(n: bigint): number {
     return n.toString(2).length
 }
 
-// Euclidean GCD extended binary algorithm
-function gcd(u: bigint, v: bigint, x1: bigint, x2: bigint, p: bigint): bigint {
-    if (!(u > 0n && v > 0n)) {
-        throw new Error(`u,v=${u},${v} must be greater than 0`)
+// https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
+function gcd(value: bigint, modulus: bigint) {
+    let t = 0n
+    let r = modulus
+    let newt = 1n
+    let newr = value
+
+    while (newr !== 0n) {
+        const quotient = r / newr
+        ;[t, newt] = [newt, t - quotient * newt]
+        ;[r, newr] = [newr, r - quotient * newr]
     }
 
-    // Base cases
-    if (u === 1n) return mod(x1, Q)
-    if (v === 1n) return mod(x2, Q)
-    if (u % 2n === 0n) {
-        if (x1 % 2n === 0n) {
-            return gcd(u >> 1n, v, x1 >> 1n, x2, p)
-        } else {
-            return gcd(u >> 1n, v, (x1 + p) >> 1n, x2, p)
-        }
+    if (r > 1n) {
+        throw new Error(`Not invertible: ${value}`)
     }
-    if (v % 2n === 0n) {
-        if (x2 % 2n === 0n) {
-            return gcd(u, v >> 1n, x1, x2 >> 1n, p)
-        } else {
-            return gcd(u, v >> 1n, x1, (x2 + Q) >> 1n, p)
-        }
+    if (t < 0n) {
+        t = t + modulus
     }
-    if (u >= v) {
-        return gcd(u - v, v, x1 - x2, x2, p)
-    }
-    if (u < v) {
-        return gcd(u, v - u, x1, x2 - x1, p)
-    }
-    throw new Error(`GCD failed with u,v=${u},${v} x1,x2=${x1},${x2} p=${p}`)
+    return t
 }
 
 function frobeniusCoeffsPowers(modulus: bigint, degree: bigint, num?: bigint, divisor?: bigint) {
@@ -140,6 +130,118 @@ export interface Field {
     // mulByScalar(c: bigint):ThisType<this>
 }
 
+export class Fr implements Field {
+    value: bigint
+
+    constructor(x: bigint) {
+        this.value = mod(x, R)
+    }
+
+    static order(): bigint {
+        return R
+    }
+
+    static zero(): Fr {
+        return new Fr(0n)
+    }
+
+    static one(): Fr {
+        return new Fr(1n)
+    }
+
+    equals(rhs: Fr): boolean {
+        return this.value === rhs.value
+    }
+
+    lt(rhs: Fr): boolean {
+        return this.value < rhs.value
+    }
+
+    add(rhs: Fr): Fr {
+        return new Fr(this.value + rhs.value)
+    }
+
+    sub(rhs: Fr): Fr {
+        return new Fr(this.value - rhs.value)
+    }
+
+    neg(): Fr {
+        return new Fr(-this.value)
+    }
+
+    mul(rhs: Fr): Fr {
+        return new Fr(this.value * rhs.value)
+    }
+
+    mulByScalar(c: bigint): Fr {
+        return new Fr(this.value * c)
+    }
+
+    mulByNonResidue(): Fr {
+        return this
+    }
+
+    inv() {
+        if (this.value === 0n) {
+            throw new Error(`Inversion of zero`)
+        }
+        return new Fr(gcd(this.value, R))
+    }
+
+    exp(y: bigint): Fr {
+        let x: Fr = this
+        let result = new Fr(1n)
+        while (y > 0) {
+            const lsb = y & 1n
+            y = y / 2n
+            if (lsb) {
+                result = result.mul(x)
+            }
+            x = x.mul(x)
+        }
+        return result
+    }
+
+    legendre(): number {
+        const order = R
+        const x = this.exp((order - 1n) / 2n)
+        if (x.equals(new Fr(order - 1n))) {
+            return -1
+        }
+        if (!x.equals(Fr.zero()) && !x.equals(new Fr(1n))) {
+            throw new Error(`Legendre failed: ${this}^{(${order}-1)//2} = ${x}`)
+        }
+        return Number(x)
+    }
+
+    sqrt(): Fr {
+        const root = this.exp((R + 1n) / 4n)
+        if (!root.mul(root).equals(this)) {
+            throw new Error(`No square root exists for ${this}`)
+        }
+        return root
+    }
+
+    conjugate(): Fr {
+        return new Fr(this.value)
+    }
+
+    signBigEndian(): boolean {
+        const negV = this.neg()
+        return this.lt(negV)
+    }
+
+    toString() {
+        return `(Fr ${this.value.toString()})`
+    }
+
+    toJSON() {
+        return {
+            x: this.value.toString(),
+        }
+    }
+}
+
 export class Fq implements Field {
     value: bigint
 
@@ -147,8 +249,16 @@ export class Fq implements Field {
         this.value = mod(x, Q)
     }
 
+    static order(): bigint {
+        return Q
+    }
+
     static zero(): Fq {
         return new Fq(0n)
+    }
+
+    static one(): Fq {
+        return new Fq(1n)
     }
 
     equals(rhs: Fq): boolean {
@@ -187,7 +297,7 @@ export class Fq implements Field {
         if (this.value === 0n) {
             throw new Error(`Inversion of zero`)
         }
-        return new Fq(gcd(this.value, Q, 1n, 0n, Q))
+        return new Fq(gcd(this.value, Q))
     }
 
     exp(y: bigint): Fq {

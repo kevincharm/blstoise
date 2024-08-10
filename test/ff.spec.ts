@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Fq, Fq12, Fq2, Fq6 } from '../src/ff'
+import { Fq, Fq12, Fq2, Fq6, Fr } from '../src/ff'
 
 async function readTestVectors<S, P>(
     name: string,
@@ -97,6 +97,25 @@ const reviveFq12 = ([x, y, z]: SFq12[]): PFq12Vector => [
 ]
 
 describe('finite fields', () => {
+    describe('Fr', () => {
+        it('inv', () => {
+            const expected: [Fr, Fr][] = [
+                [1n, 1n],
+                [
+                    2n,
+                    26217937587563095239723870254092982918845276250263818911301829349969290592257n,
+                ],
+                [
+                    3n,
+                    34957250116750793652965160338790643891793701667018425215069105799959054123009n,
+                ],
+            ].map(([x, y]) => [new Fr(x), new Fr(y)])
+            for (const [x, y] of expected) {
+                expect(x.inv().equals(y)).to.equal(true)
+            }
+        })
+    })
+
     describe('Fq', () => {
         it('add', async () => {
             const testVectors = await readTestVectors<SFqVector, PFqVector>('fp_add', reviveFq)

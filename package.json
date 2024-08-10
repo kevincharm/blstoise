@@ -2,11 +2,14 @@
   "name": "blstoise",
   "version": "0.0.0",
   "description": "toy bls12-381 implementation",
+  "main": "dist/src/index.js",
+  "files": ["dist/**/*", "!dist/test"],
   "engines": {
     "node": ">=18"
   },
   "packageManager": "yarn@1.22.22",
   "scripts": {
+    "prepare": "yarn tsc",
     "test": "NODE_OPTIONS=--experimental-global-webcrypto yarn mocha -r ts-node/register test/**/*.spec.ts"
   },
   "author": "Kevin Charm <kevin@kevincharm.com>",
