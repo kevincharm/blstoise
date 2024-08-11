@@ -17,7 +17,7 @@ export function randomFq(): Fq {
 }
 
 export function randomFr(): Fr {
-    return new Fq(randomBigIntModP(48, R))
+    return new Fr(randomBigIntModP(31, R))
 }
 
 export function randomBigIntModP(bytes: number, p: bigint): bigint {
