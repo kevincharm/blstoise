@@ -1,12 +1,9 @@
 {
-  "name": "blstoise",
+  "name": "@kevincharm/blstoise",
   "version": "1.0.0",
   "description": "toy bls12-381 implementation",
   "main": "dist/src/index.js",
-  "files": [
-    "dist/**/*",
-    "!dist/test"
-  ],
+  "files": ["dist/**/*", "!dist/test"],
   "engines": {
     "node": ">=18"
   },
@@ -16,6 +13,10 @@
     "test": "NODE_OPTIONS=--experimental-global-webcrypto yarn mocha -r ts-node/register test/**/*.spec.ts"
   },
   "author": "Kevin Charm <kevin@kevincharm.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevincharm/blstoise.git"
+  },
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^4.3.16",
