@@ -1,9 +1,12 @@
 {
   "name": "blstoise",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "toy bls12-381 implementation",
   "main": "dist/src/index.js",
-  "files": ["dist/**/*", "!dist/test"],
+  "files": [
+    "dist/**/*",
+    "!dist/test"
+  ],
   "engines": {
     "node": ">=18"
   },
