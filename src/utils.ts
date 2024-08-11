@@ -17,11 +17,14 @@ export function randomFq(): Fq {
 }
 
 export function randomFr(): Fr {
-    return new Fr(randomBigIntModP(31, R))
+    return new Fr(randomBigIntModP(32, R))
 }
 
 export function randomBigIntModP(bytes: number, p: bigint): bigint {
     const randUpperBound = 2n ** BigInt(bytes * 8)
+    if (randUpperBound < p) {
+        throw new Error(`Insufficient bytes for modulus ${p}`)
+    }
     const upperBound = randUpperBound - (randUpperBound % p)
     let rand: bigint
     while ((rand = randomBigInt(bytes)) >= upperBound) {}

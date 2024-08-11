@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Fq, Fq12, Fq2, Fq6, Fr } from '../src/ff'
+import { randomFr } from '../src/utils'
 
 async function readTestVectors<S, P>(
     name: string,
@@ -98,6 +99,11 @@ const reviveFq12 = ([x, y, z]: SFq12[]): PFq12Vector => [
 
 describe('finite fields', () => {
     describe('Fr', () => {
+        it('random', () => {
+            const r = randomFr()
+            expect(r.value).to.not.equal(0n)
+        })
+
         it('inv', () => {
             const expected: [Fr, Fr][] = [
                 [1n, 1n],
